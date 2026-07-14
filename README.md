@@ -113,6 +113,9 @@ Created a custom VPC with public and private subnets across two Availability Zon
 
 `![VPC Setup](screenshots/00-vpc-subnets.png)`
 
+### Resource Map Visuals
+`![Resource map](screenshots/00- resource-map.png)`
+
 ### 2. Internet Gateway
 Attached Internet Gateway to the VPC so that resources in the VPc can access the internet 
 
@@ -127,9 +130,6 @@ Deployed a NAT Gateway in the public subnet to allow private EC2 instances outbo
 Configured least-privilege security groups for the ALB, EC2 instances, and bastion host.
 
 `![Security Groups](screenshots/03-security-groups.png)`
-
-### Resource Map Visuals
-`![Resource map](screenshots/00- resource-map.png)`
 
 ### 5. Bastion Host & SSH Access
 Launched a bastion host in the public subnet and used it to securely SSH into private EC2 instances.
