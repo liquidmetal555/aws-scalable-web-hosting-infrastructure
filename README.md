@@ -30,7 +30,7 @@ Imagine a small business wants to launch its marketing website. They need it to:
 - **Scale automatically** during traffic spikes (e.g., a product launch or ad campaign) without manual intervention
 - **Be secure**, with no direct public access to backend servers
 - **Use a custom, professional domain** (not an AWS-generated URL) served over HTTPS
-- **Keep costs reasonable** — no need for a database or complex backend since the content is static
+- **Keep costs reasonable** no need for a database or complex backend since the content is static
 
 
 ## The Solution
