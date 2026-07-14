@@ -80,13 +80,13 @@ Bastion Host (Public Subnet) → SSH → EC2 Instances (Private Subnets)
 | **Auto Scaling Group** | Automatically adds/removes EC2 instances | Ensures the site handles traffic spikes and self-heals if an instance fails, without manual intervention |
 | **Application Load Balancer (ALB)** | Distributes traffic across EC2 instances | Removes single point of failure, enables health checks, and terminates SSL at the edge |
 | **NAT Gateway** | Outbound internet access for private subnet instances | Lets EC2 instances pull OS updates/packages without being reachable from the internet |
-| **Security Groups** | Instance-level firewall rules | Enforces least-privilege access — e.g., EC2 only accepts traffic from the ALB, not the public internet |
+| **Security Groups** | Instance-level firewall rules | Enforces least-privilege access e.g., EC2 only accepts traffic from the ALB, not the public internet |
 | **Bastion Host** | Secure SSH entry point | Provides controlled, auditable access to private EC2 instances without exposing them directly |
 | **Route 53** | DNS management | Routes the custom domain to the ALB and enables health-check-based routing |
-| **AWS Certificate Manager (ACM)** | Free SSL/TLS certificate | Encrypts traffic in transit (HTTPS) and builds trust with visitors — required for any real-world site |
-| **Porkbun (domain registrar)** | Domain purchase | Registered the domain externally and pointed the nameservers to Route 53, showing I can integrate AWS with third-party services — a common real-world scenario |
+| **AWS Certificate Manager (ACM)** | Free SSL/TLS certificate | Encrypts traffic in transit (HTTPS) and builds trust with visitors required for any real-world site |
+| **Porkbun (domain registrar)** | Domain purchase | Registered the domain externally and pointed the nameservers to Route 53, showing I can integrate AWS with third-party services a common real-world scenario |
 
-**Deliberately not used:** RDS — since the website is static with no dynamic data, introducing a database would have added unnecessary cost and operational overhead without solving a real problem.
+**Deliberately not used:** RDS since the website is static with no dynamic data, introducing a database would have added unnecessary cost and operational overhead without solving a real problem.
 
 ---
 
@@ -100,7 +100,7 @@ Bastion Host (Public Subnet) → SSH → EC2 Instances (Private Subnets)
   - Bastion Security Group → allows inbound SSH (22) only from my IP address
   - EC2 SSH access → allowed only from the bastion host security group, not the public internet
 
-This design means there is **no direct path from the internet to the EC2 instances** — all traffic must pass through the ALB (for web traffic) or the bastion host (for SSH/admin access).
+This design means there is **no direct path from the internet to the EC2 instances** all traffic must pass through the ALB (for web traffic) or the bastion host (for SSH/admin access).
 
 ---
 
@@ -114,7 +114,7 @@ Created a custom VPC with public and private subnets across two Availability Zon
 `![VPC Setup](screenshots/01-vpc-subnets.png)`
 
 ### 2. NAT Gateway
-Deployed a NAT Gateway in the public subnet to allow private EC2 instances outbound-only internet access.
+Deployed a NAT Gateway in the public subnet to allow private EC2 instances outbound only internet access.
 
 `![NAT Gateway](screenshots/02-nat-gateway.png)`
 
@@ -155,7 +155,7 @@ Final result — the site loading securely over HTTPS on the custom domain.
 
 ## Domain & SSL Setup
 
-- Purchased the domain through **Porkbun** (an external registrar) rather than Route 53 directly — a common cost-saving decision companies make
+- Purchased the domain through **Porkbun** (an external registrar) rather than Route 53 directly a common cost-saving decision companies make
 - Updated Porkbun's **nameservers** to point to the AWS Route 53 hosted zone, connecting third-party DNS management to AWS
 - Created a Route 53 **record set** to route the domain to the Application Load Balancer
 - Requested a free public SSL certificate through **AWS Certificate Manager**, validated via DNS
@@ -165,7 +165,7 @@ Final result — the site loading securely over HTTPS on the custom domain.
 
 ## Security Considerations
 
-- No EC2 instance has a public IP address — all are in private subnets
+- No EC2 instance has a public IP address  all are in private subnets
 - All SSH access flows through a single, auditable **bastion host**
 - Security groups follow **least-privilege**: each resource only accepts traffic from the specific resource it needs to (ALB → EC2, bastion → EC2, internet → ALB only)
 - HTTPS enforced end-to-end at the load balancer using ACM
@@ -176,22 +176,22 @@ Final result — the site loading securely over HTTPS on the custom domain.
 ## Challenges & Troubleshooting
 
 
-- **ALB health checks failing initially** — traced to the EC2 security group not allowing inbound traffic from the ALB's security group (only had my IP allowed). Fixed by updating the EC2 SG to accept traffic from the ALB SG specifically.
-- **SSH access from bastion to private instance timing out** — resolved by correcting the private instance's security group to allow SSH only from the bastion host's security group, and confirming the correct `.pem` key was used with agent forwarding.
-- **DNS not resolving after Porkbun nameserver update** — propagation delay; confirmed using `dig` and AWS Route 53 health checks before traffic routed correctly.
+- **ALB health checks failing initially** traced to the EC2 security group not allowing inbound traffic from the ALB's security group (only had my IP allowed). Fixed by updating the EC2 SG to accept traffic from the ALB SG specifically.
+- **SSH access from bastion to private instance timing out** resolved by correcting the private instance's security group to allow SSH only from the bastion host's security group, and confirming the correct `.pem` key was used with agent forwarding.
+- **DNS not resolving after Porkbun nameserver update**  propagation delay; confirmed using `dig` and AWS Route 53 health checks before traffic routed correctly.
 
 ---
 
 ## What I'd Improve / Next Steps
 
-Being upfront about the current limitations — and how I'd evolve this if it were a real production system:
+Being upfront about the current limitations  and how I'd evolve this if it were a real production system:
 
 - **Infrastructure as Code:** Rebuild this using **Terraform** or **CloudFormation** instead of manual console setup, for repeatability and version control
 - **CI/CD Pipeline:** Automate deployments with **CodePipeline/CodeBuild** or GitHub Actions so website updates deploy automatically on push
 - **CloudFront CDN:** Add a CloudFront distribution in front of the ALB to reduce latency globally and offload traffic from EC2
 - **WAF:** Attach AWS WAF to the ALB to protect against common web exploits
 - **Monitoring & Alerting:** Add CloudWatch dashboards and alarms (e.g., unhealthy target alerts, high CPU triggers) with SNS notifications
-- **Cost Optimization:** Evaluate replacing EC2 + ASG with **S3 static website hosting + CloudFront** for this specific static-content use case, which would be cheaper and simpler — while keeping this EC2-based version to demonstrate VPC/networking/ALB skills
+- **Cost Optimization:** Evaluate replacing EC2 + ASG with **S3 static website hosting + CloudFront** for this specific static-content use case, which would be cheaper and simpler while keeping this EC2-based version to demonstrate VPC/networking/ALB skills
 - **Logging:** Enable ALB access logs and VPC Flow Logs for auditability
 
 ---
