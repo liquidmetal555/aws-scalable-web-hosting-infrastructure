@@ -1,121 +1,215 @@
 # Highly Available & Secure Static Website Hosting on AWS
-A production-style AWS architecture that hosts a static website behind a load-balanced, auto-scaling, HTTPS-secured infrastructure — built to reflect how a real company would deploy a public-facing site, not just a "hello world" demo.
- 
+
+A production-style AWS infrastructure project that hosts a static HTML website behind a secure, scalable, and highly available architecture — built the way a real company would deploy a customer-facing site, not just a "click-through" tutorial.This project intentionally uses EC2 + ALB + Auto Scaling rather than S3 + CloudFront, even though S3 would be more cost-effective for purely static content. The goal was to demonstrate VPC design, subnet architecture, security group configuration, and load balancing — skills that transfer directly to hosting dynamic applications, not just static files. In a real cost-sensitive production scenario with no dynamic content, I would recommend S3 + CloudFront instead, and have outlined that trade-off here to show I understand when each approach is appropriate.
+
+![AWS](https://img.shields.io/badge/AWS-Cloud-orange) ![Status](https://img.shields.io/badge/Status-Complete-brightgreen) ![Architecture](https://img.shields.io/badge/Architecture-Multi--AZ-blue)
+
 ---
- 
+
 ## Table of Contents
 - [The Problem](#the-problem)
 - [The Solution](#the-solution)
-- [Architecture](#architecture)
+- [Architecture Diagram](#architecture-diagram)
 - [AWS Services Used & Why](#aws-services-used--why)
-- [Deployment Walkthrough](#deployment-walkthrough)
+- [Network Design](#network-design)
+- [Implementation Walkthrough](#implementation-walkthrough)
+- [Domain & SSL Setup](#domain--ssl-setup)
 - [Security Considerations](#security-considerations)
-- [Challenges & How I Solved Them](#challenges--how-i-solved-them)
-- [What I'd Improve Next](#what-id-improve-next)
+- [Challenges & Troubleshooting](#challenges--troubleshooting)
+- [What I'd Improve / Next Steps](#what-id-improve--next-steps)
 - [Skills Demonstrated](#skills-demonstrated)
-- [Contact](#contact)
+- [About Me](#about-me)
+
 ---
- 
+
 ## The Problem
- 
-Imagine a small business or startup that needs to launch its marketing website. On paper this sounds simple — upload some HTML and go live. In practice, a real company can't just drop files on a single server, because that approach fails the moment:
- 
-- The server goes down and there's no failover → **the site disappears**
-- Traffic spikes (a product launch, a press mention) → **the server crashes**
-- The site runs on plain HTTP → **browsers flag it as "Not Secure," damaging trust**
-- The server is publicly exposed with no network segmentation → **it's an easy attack target**
-- Traffic grows and no one is watching capacity → **manual scaling becomes a bottleneck**
-This project simulates solving that exact problem: hosting a static website the way a company actually would, with **availability, security, and scalability** built in from the start — not bolted on later.
- 
+
+Imagine a small business wants to launch its marketing website. They need it to:
+
+- **Stay online** even if a server or an entire data center (Availability Zone) goes down
+- **Scale automatically** during traffic spikes (e.g., a product launch or ad campaign) without manual intervention
+- **Be secure**, with no direct public access to backend servers
+- **Use a custom, professional domain** (not an AWS-generated URL) served over HTTPS
+- **Keep costs reasonable** — no need for a database or complex backend since the content is static
+
+Many beginner AWS projects stop at "launch one EC2 instance and open port 80." That approach has a single point of failure, no encryption in transit, no protection for the underlying servers, and no way to handle real-world traffic. This project solves that gap by building the same foundational architecture used in production environments — minus the database layer, since a static site doesn't need one.
+
 ## The Solution
- 
-I designed and deployed a **highly available, auto-scaling, HTTPS-secured web hosting environment** on AWS using a custom VPC, load-balanced EC2 instances across multiple Availability Zones, and a managed SSL certificate tied to a real domain via Route 53.
- 
-The result: a static site that can survive an instance failure, scale automatically under load, and serve traffic securely over `https://` on a custom domain — with no single point of failure in the compute layer.
- 
-## Architecture
- 
+
+I designed and deployed a **multi-AZ, auto-scaling, load-balanced web hosting architecture** on AWS, fully isolated inside a custom VPC, with encrypted traffic via a custom domain and a free SSL certificate. Backend instances are never exposed directly to the internet — all access is controlled through a bastion host and security groups following least-privilege principles.
+
+Because the website is static (HTML/CSS/JS only, no dynamic content or user data), I deliberately **excluded RDS** from the architecture — adding a database here would have been unnecessary cost and complexity for the problem being solved. This was a scoping decision, not an oversight.
+
+---
+
+## Architecture Diagram
+
+> _Add your architecture diagram image here, e.g.:_
+> `![Architecture Diagram](screenshots/architecture-diagram.png)`
+
+**High-level traffic flow:**
+
 ```
-                                   Internet
-                                      |
-                              Route 53 (DNS)
-                                      |
-                          ACM SSL Certificate (HTTPS)
-                                      |
-                        Application Load Balancer (Public Subnets)
-                                      |
-                        ---------------------------------
-                        |                                 |
-                Auto Scaling Group                 Auto Scaling Group
-                EC2 (Private Subnet - AZ 1)         EC2 (Private Subnet - AZ 2)
-                        |                                 |
-                        ---------------------------------
-                                      |
-                               NAT Gateway (Public Subnet)
-                                      |
-                              Outbound Internet Access
+Internet
+   │
+   ▼
+Route 53 (DNS: yourdomain.com)
+   │
+   ▼
+ACM (SSL/TLS Certificate)
+   │
+   ▼
+Application Load Balancer (Public Subnets, Multi-AZ)
+   │
+   ▼
+Auto Scaling Group → EC2 Instances (Private Subnets, Multi-AZ)
+   │
+   ▼
+NAT Gateway (outbound internet for updates/patches only)
+
+Bastion Host (Public Subnet) → SSH → EC2 Instances (Private Subnets)
 ```
- 
-**Key design choice:** the web servers themselves sit in **private subnets**, not exposed directly to the internet. All inbound traffic is forced through the Application Load Balancer, and outbound traffic (e.g., OS updates) is routed through a NAT Gateway. This mirrors how production environments are actually segmented.
- 
+
+---
+
 ## AWS Services Used & Why
- 
-| Service | Why I chose it |
-|---|---|
-| **VPC (Public + Private Subnets)** | Segments the network so web servers aren't directly internet-facing — only the load balancer is. This is a foundational security pattern in real production environments. |
-| **Security Groups** | Enforced least-privilege access — the ALB only accepts HTTP/HTTPS from the internet, and EC2 instances only accept traffic from the ALB's security group, not the open internet. |
-| **NAT Gateway** | Lets private-subnet instances reach the internet for updates/patches without being reachable *from* the internet — outbound only. |
-| **EC2 + Auto Scaling Group** | Instead of a single server (a single point of failure), the ASG automatically replaces unhealthy instances and scales capacity up or down based on demand — directly solving the "traffic spike crashes the site" problem. |
-| **Application Load Balancer** | Distributes traffic across multiple Availability Zones and integrates natively with the ASG and health checks, so a failed instance is silently routed around instead of causing downtime. |
-| **Route 53** | Registered and managed a real custom domain instead of relying on an AWS-generated URL — this is what a real business would need for branding and credibility. |
-| **AWS Certificate Manager (ACM)** | Issued a free, auto-renewing SSL/TLS certificate so the site serves over HTTPS, avoiding browser security warnings and protecting data in transit. |
-| **HTTPS Listener on the ALB** | Terminates SSL at the load balancer, so encryption is handled centrally rather than configured on every individual server. |
- 
-> **Note:** This project does not use RDS, since the site is fully static (HTML/CSS/JS) and has no dynamic data layer or backend database requirement.
- 
-## Deployment Walkthrough
- 
-1. Created a custom VPC with public and private subnets across two Availability Zones for fault tolerance
-2. Configured route tables and an Internet Gateway for public subnet internet access
-3. Deployed a NAT Gateway in the public subnet to give private instances outbound-only internet access
-4. Created security groups following least privilege — ALB open to 80/443 from the internet, EC2 instances only open to the ALB's security group
-5. Launched EC2 instances in the private subnets and configured them to serve the static website
-6. Created a Launch Template and an Auto Scaling Group to maintain availability and handle scaling
-7. Deployed an Application Load Balancer across the public subnets
-8. Registered a domain name in Route 53 and created a record set pointing to the ALB
-9. Requested and validated an SSL certificate through AWS Certificate Manager
-10. Configured an HTTPS listener on the ALB using the ACM certificate, and redirected HTTP → HTTPS
+
+| Service | Purpose | Why I Chose It |
+|---|---|---|
+| **VPC (Public + Private Subnets)** | Network isolation | Separates internet-facing resources (ALB, bastion host) from backend servers (EC2), reducing attack surface |
+| **EC2** | Hosts the static website | Simple, cost-effective compute for serving static content |
+| **Auto Scaling Group** | Automatically adds/removes EC2 instances | Ensures the site handles traffic spikes and self-heals if an instance fails, without manual intervention |
+| **Application Load Balancer (ALB)** | Distributes traffic across EC2 instances | Removes single point of failure, enables health checks, and terminates SSL at the edge |
+| **NAT Gateway** | Outbound internet access for private subnet instances | Lets EC2 instances pull OS updates/packages without being reachable from the internet |
+| **Security Groups** | Instance-level firewall rules | Enforces least-privilege access — e.g., EC2 only accepts traffic from the ALB, not the public internet |
+| **Bastion Host** | Secure SSH entry point | Provides controlled, auditable access to private EC2 instances without exposing them directly |
+| **Route 53** | DNS management | Routes the custom domain to the ALB and enables health-check-based routing |
+| **AWS Certificate Manager (ACM)** | Free SSL/TLS certificate | Encrypts traffic in transit (HTTPS) and builds trust with visitors — required for any real-world site |
+| **Porkbun (domain registrar)** | Domain purchase | Registered the domain externally and pointed the nameservers to Route 53, showing I can integrate AWS with third-party services — a common real-world scenario |
+
+**Deliberately not used:** RDS — since the website is static with no dynamic data, introducing a database would have added unnecessary cost and operational overhead without solving a real problem.
+
+---
+
+## Network Design
+
+- **Public Subnets (Multi-AZ):** Application Load Balancer, NAT Gateway, Bastion Host
+- **Private Subnets (Multi-AZ):** EC2 instances running the website (not directly reachable from the internet)
+- **Security Groups:**
+  - ALB Security Group → allows inbound HTTP/HTTPS (80/443) from `0.0.0.0/0`
+  - EC2 Security Group → allows inbound HTTP only from the ALB security group
+  - Bastion Security Group → allows inbound SSH (22) only from my IP address
+  - EC2 SSH access → allowed only from the bastion host security group, not the public internet
+
+This design means there is **no direct path from the internet to the EC2 instances** — all traffic must pass through the ALB (for web traffic) or the bastion host (for SSH/admin access).
+
+---
+
+## Implementation Walkthrough
+
+_Screenshots below document each stage of the build for verification and transparency._
+
+### 1. VPC & Subnet Setup
+Created a custom VPC with public and private subnets across two Availability Zones for high availability.
+
+`![VPC Setup](screenshots/01-vpc-subnets.png)`
+
+### 2. NAT Gateway
+Deployed a NAT Gateway in the public subnet to allow private EC2 instances outbound-only internet access.
+
+`![NAT Gateway](screenshots/02-nat-gateway.png)`
+
+### 3. Security Groups
+Configured least-privilege security groups for the ALB, EC2 instances, and bastion host.
+
+`![Security Groups](screenshots/03-security-groups.png)`
+
+### 4. Bastion Host & SSH Access
+Launched a bastion host in the public subnet and used it to securely SSH into private EC2 instances.
+
+`![Bastion Host SSH](screenshots/04-bastion-ssh.png)`
+`![Private Instance SSH via Bastion](screenshots/05-private-ssh.png)`
+
+### 5. Auto Scaling Group
+Created a launch template and Auto Scaling Group to automatically maintain healthy instance counts across AZs.
+
+`![Auto Scaling Group](screenshots/06-asg.png)`
+
+### 6. Application Load Balancer
+Deployed an ALB across public subnets with health checks targeting the private EC2 instances.
+
+`![Application Load Balancer](screenshots/07-alb.png)`
+
+### 7. Domain, SSL & Route 53
+Requested an SSL certificate via ACM, created an HTTPS listener on the ALB, and connected the domain via Route 53.
+
+`![ACM Certificate](screenshots/08-acm-cert.png)`
+`![HTTPS Listener](screenshots/09-https-listener.png)`
+`![Route 53 Record Set](screenshots/10-route53-record.png)`
+
+### 8. Live Website
+Final result — the site loading securely over HTTPS on the custom domain.
+
+`![Live Website](screenshots/11-live-site.png)`
+
+---
+
+## Domain & SSL Setup
+
+- Purchased the domain through **Porkbun** (an external registrar) rather than Route 53 directly — a common cost-saving decision companies make
+- Updated Porkbun's **nameservers** to point to the AWS Route 53 hosted zone, connecting third-party DNS management to AWS
+- Created a Route 53 **record set** to route the domain to the Application Load Balancer
+- Requested a free public SSL certificate through **AWS Certificate Manager**, validated via DNS
+- Configured an **HTTPS listener** on the ALB so all traffic is served securely over port 443
+
+---
+
 ## Security Considerations
- 
-- Web servers are never directly exposed to the internet — all traffic passes through the ALB
-- Security groups are scoped tightly rather than left open (`0.0.0.0/0` only where genuinely required, e.g., the ALB's HTTP/HTTPS listeners)
-- HTTPS is enforced end-to-end for anything reaching the public internet
-- Outbound-only internet access for private instances via NAT Gateway reduces the attack surface
-## Challenges & How I Solved Them
- 
-*(This is a great section to personalize — swap in what actually gave you trouble. A couple of common ones for this exact build:)*
- 
-- **Health checks failing on new instances:** Initially the ASG kept cycling instances because the ALB health check path didn't match how the web server was serving content — resolved by aligning the health check path/port with the actual running service.
-- **Certificate validation delay:** ACM validation via DNS took time to propagate through Route 53 — solved by using DNS validation records directly instead of email validation, which is faster and automatable.
-## What I'd Improve Next
- 
-Being transparent about next steps shows maturity, not weakness — here's what I'd add to take this from a portfolio project to a fully production-grade setup:
- 
-- **CloudFront (CDN):** Cache content at edge locations for faster global load times and reduced load on origin servers
-- **Infrastructure as Code:** Rebuild this using Terraform or CloudFormation instead of manual console configuration, for repeatability and version control
-- **CI/CD Pipeline:** Automate deployments with CodePipeline/CodeBuild or GitHub Actions so site updates deploy without manual intervention
-- **AWS WAF:** Add a Web Application Firewall in front of the ALB for protection against common exploits (SQL injection, XSS, bot traffic)
-- **CloudWatch Monitoring & Alarms:** Set up dashboards and alerts for instance health, latency, and traffic anomalies
-- **Cost Optimization / Budget Alarms:** Add AWS Budgets to monitor spend, and evaluate S3 + CloudFront static hosting as a lower-cost alternative for pure static content
-- **Multi-Region Failover:** For true disaster recovery, replicate the architecture into a second region with Route 53 failover routing
+
+- No EC2 instance has a public IP address — all are in private subnets
+- All SSH access flows through a single, auditable **bastion host**
+- Security groups follow **least-privilege**: each resource only accepts traffic from the specific resource it needs to (ALB → EC2, bastion → EC2, internet → ALB only)
+- HTTPS enforced end-to-end at the load balancer using ACM
+- Outbound-only internet access for private instances via NAT Gateway (for patching/updates)
+
+---
+
+## Challenges & Troubleshooting
+
+
+- **ALB health checks failing initially** — traced to the EC2 security group not allowing inbound traffic from the ALB's security group (only had my IP allowed). Fixed by updating the EC2 SG to accept traffic from the ALB SG specifically.
+- **SSH access from bastion to private instance timing out** — resolved by correcting the private instance's security group to allow SSH only from the bastion host's security group, and confirming the correct `.pem` key was used with agent forwarding.
+- **DNS not resolving after Porkbun nameserver update** — propagation delay; confirmed using `dig` and AWS Route 53 health checks before traffic routed correctly.
+
+---
+
+## What I'd Improve / Next Steps
+
+Being upfront about the current limitations — and how I'd evolve this if it were a real production system:
+
+- **Infrastructure as Code:** Rebuild this using **Terraform** or **CloudFormation** instead of manual console setup, for repeatability and version control
+- **CI/CD Pipeline:** Automate deployments with **CodePipeline/CodeBuild** or GitHub Actions so website updates deploy automatically on push
+- **CloudFront CDN:** Add a CloudFront distribution in front of the ALB to reduce latency globally and offload traffic from EC2
+- **WAF:** Attach AWS WAF to the ALB to protect against common web exploits
+- **Monitoring & Alerting:** Add CloudWatch dashboards and alarms (e.g., unhealthy target alerts, high CPU triggers) with SNS notifications
+- **Cost Optimization:** Evaluate replacing EC2 + ASG with **S3 static website hosting + CloudFront** for this specific static-content use case, which would be cheaper and simpler — while keeping this EC2-based version to demonstrate VPC/networking/ALB skills
+- **Logging:** Enable ALB access logs and VPC Flow Logs for auditability
+
+---
+
 ## Skills Demonstrated
- 
-`AWS VPC Design` `Network Segmentation` `EC2` `Auto Scaling` `Application Load Balancer` `Route 53 / DNS Management` `SSL/TLS (ACM)` `Security Group Configuration` `NAT Gateway` `High Availability Architecture` `Cloud Security Fundamentals`
- 
-## Contact
- 
+
+`AWS VPC` `Subnetting` `EC2` `Auto Scaling` `Application Load Balancer` `NAT Gateway` `Security Groups` `Bastion Host / SSH` `Route 53` `DNS Management` `AWS Certificate Manager` `HTTPS/SSL` `Third-Party Domain Integration` `Cloud Networking Fundamentals` `Troubleshooting`
+
+---
+
+## About Me
+
+_Add a short bio, LinkedIn, and portfolio/GitHub links here._
+
 **[Your Name]**
-[LinkedIn] · [Email] · [Portfolio/GitHub]
+[LinkedIn](#) • [Portfolio](#) • [Email](#)
+
  
 ---
  
