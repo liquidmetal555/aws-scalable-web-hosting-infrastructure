@@ -35,9 +35,9 @@ Imagine a small business wants to launch its marketing website. They need it to:
 
 ## The Solution
 
-I designed and deployed a **multi-AZ, auto-scaling, load-balanced web hosting architecture** on AWS, fully isolated inside a custom VPC, with encrypted traffic via a custom domain and a free SSL certificate. Backend instances are never exposed directly to the internet — all access is controlled through a bastion host and security groups following least-privilege principles.
+I designed and deployed a **multi-AZ, auto-scaling, load-balanced web hosting architecture** on AWS, fully isolated inside a custom VPC, with encrypted traffic via a custom domain and a free SSL certificate. Backend instances are never exposed directly to the internet all access is controlled through a bastion host and security groups following least-privilege principles.
 
-Because the website is static (HTML/CSS/JS only, no dynamic content or user data), I deliberately **excluded RDS** from the architecture — adding a database here would have been unnecessary cost and complexity for the problem being solved. This was a scoping decision, not an oversight.
+Because the website is static (HTML/CSS/JS only, no dynamic content or user data), I deliberately **excluded RDS** from the architecture adding a database here would have been unnecessary cost and complexity for the problem being solved. This was a scoping decision, not an oversight.
 
 ---
 
