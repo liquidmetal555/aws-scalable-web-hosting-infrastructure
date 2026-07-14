@@ -1,0 +1,24 @@
+# SSH into EC2 in the public subnet using PowerShell:
+ssh -i C:\path\to\your-key.pem ec2-user@<public-ipv4-of-web-server>
+Example if key is moved to desktop :  ssh -i .\dev-ec2-key.pem ec2-user@32.197.192.37
+
+
+
+
+# SSH into an EC2 instance in a private subnet using PowerShell with agent forwarding:
+
+# Check if ssh-agent is running
+Get-Service ssh-agent
+
+# If the ssh-agent service is not running, set it to automatic and start it
+Set-Service -Name ssh-agent -StartupType Automatic
+Start-Service ssh-agent
+
+# Load your key file into the ssh-agent
+ssh-add C:\path\to\your-key.pem
+
+# SSH into the bastion host with agent forwarding enabled
+ssh -A -i C:\path\to\your-key.pem ec2-user@<public-ipv4-of-bastion-host>
+
+# From the bastion host, SSH into the private EC2 instance (no key needed due to agent forwarding)
+ssh ec2-user@<private-ipv4-of-the-web-server>

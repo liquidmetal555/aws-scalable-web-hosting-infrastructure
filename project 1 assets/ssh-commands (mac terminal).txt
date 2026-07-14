@@ -1,0 +1,24 @@
+# SSH into EC2 in the public subnet:
+ssh -i ~/path/to/your-key.pem ec2-user@<public-ipv4-of-web-server>
+
+
+
+# SSH into an EC2 instance in a private subnet using agent forwarding:
+
+# Check if ssh-agent is running
+echo $SSH_AUTH_SOCK
+
+# If empty, start ssh-agent (usually it's already running on macOS)
+eval "$(ssh-agent -s)"
+
+# Load your key file into the ssh-agent
+ssh-add ~/path/to/your-key.pem
+
+# Verify the key was added
+ssh-add -l
+
+# SSH into the bastion host with agent forwarding enabled
+ssh -A -i ~/path/to/your-key.pem ec2-user@<public-ipv4-of-bastion-host>
+
+# From the bastion host, SSH into the private EC2 instance (no key needed due to agent forwarding)
+ssh ec2-user@<private-ipv4-of-the-web-server>
