@@ -111,7 +111,7 @@ _Screenshots below document each stage of the build for verification and transpa
 ### 1. VPC & Subnet Setup
 Created a custom VPC with public and private subnets across two Availability Zones for high availability.
 
-`![VPC Setup](screenshots/01-vpc-subnets.png)`
+`![VPC Setup](Screenshots/01-vpc-subnets.png)`
 
 ### 2. NAT Gateway
 Deployed a NAT Gateway in the public subnet to allow private EC2 instances outbound only internet access.
