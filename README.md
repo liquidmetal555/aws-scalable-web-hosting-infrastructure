@@ -32,7 +32,6 @@ Imagine a small business wants to launch its marketing website. They need it to:
 - **Use a custom, professional domain** (not an AWS-generated URL) served over HTTPS
 - **Keep costs reasonable** — no need for a database or complex backend since the content is static
 
-Many beginner AWS projects stop at "launch one EC2 instance and open port 80." That approach has a single point of failure, no encryption in transit, no protection for the underlying servers, and no way to handle real-world traffic. This project solves that gap by building the same foundational architecture used in production environments — minus the database layer, since a static site doesn't need one.
 
 ## The Solution
 
