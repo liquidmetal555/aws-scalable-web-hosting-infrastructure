@@ -111,7 +111,7 @@ _Screenshots below document each stage of the build for verification and transpa
 ### 1. VPC & Subnet Setup
 Created a custom VPC with public and private subnets across two Availability Zones for high availability.
 
-`![VPC Setup](Screenshots/00-vpc-subnets.png)`
+`![VPC Setup](screenshots/00-vpc-subnets.png)`
 
 ### 2. Internet Gateway
 Attached Internet Gateway to the VPC so that resources in the VPc can access the internet 
