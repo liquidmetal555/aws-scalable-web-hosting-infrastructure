@@ -18,6 +18,7 @@ A production-style AWS infrastructure project that hosts a static HTML website b
 - [Challenges & Troubleshooting](#challenges--troubleshooting)
 - [What I'd Improve / Next Steps](#what-id-improve--next-steps)
 - [Skills Demonstrated](#skills-demonstrated)
+- [Author](#Author)
 
 
 ---
@@ -218,7 +219,7 @@ Being upfront about the current limitations  and how I'd evolve this if it were 
 
 ---
 
-
+## Author
 
 **[Desmond Ojei]**
   [LinkedIn](https://www.linkedin.com/in/desmond-ojei/) 
