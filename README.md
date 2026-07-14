@@ -18,7 +18,7 @@ A production-style AWS infrastructure project that hosts a static HTML website b
 - [Challenges & Troubleshooting](#challenges--troubleshooting)
 - [What I'd Improve / Next Steps](#what-id-improve--next-steps)
 - [Skills Demonstrated](#skills-demonstrated)
-- [About Me](#about-me)
+
 
 ---
 
