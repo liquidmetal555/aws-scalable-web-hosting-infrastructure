@@ -52,7 +52,7 @@ Because the website is static (HTML/CSS/JS only, no dynamic content or user data
 Internet
    │
    ▼
-Route 53 (DNS: yourdomain.com)
+Route 53 (DNS: myawspoject.fyi)
    │
    ▼
 ACM (SSL/TLS Certificate)
@@ -111,45 +111,60 @@ _Screenshots below document each stage of the build for verification and transpa
 ### 1. VPC & Subnet Setup
 Created a custom VPC with public and private subnets across two Availability Zones for high availability.
 
-`![VPC Setup](Screenshots/01-vpc-subnets.png)`
+`![VPC Setup](Screenshots/00-vpc-subnets.png)`
 
-### 2. NAT Gateway
+### 2. Internet Gateway
+Attached Internet Gateway to the VPC so that resources in the VPc can access the internet 
+
+`![NAT Gateway](screenshots/01-internet-gateway.png)`
+
+### 3. NAT Gateway
 Deployed a NAT Gateway in the public subnet to allow private EC2 instances outbound only internet access.
 
 `![NAT Gateway](screenshots/02-nat-gateway.png)`
 
-### 3. Security Groups
+### 4. Security Groups
 Configured least-privilege security groups for the ALB, EC2 instances, and bastion host.
 
 `![Security Groups](screenshots/03-security-groups.png)`
 
-### 4. Bastion Host & SSH Access
+### Resource Map Visuals
+`![Resource map](screenshots/00- resource-map.png)`
+
+### 5. Bastion Host & SSH Access
 Launched a bastion host in the public subnet and used it to securely SSH into private EC2 instances.
 
 `![Bastion Host SSH](screenshots/04-bastion-ssh.png)`
 `![Private Instance SSH via Bastion](screenshots/05-private-ssh.png)`
 
-### 5. Auto Scaling Group
+### 6. Auto Scaling Group
 Created a launch template and Auto Scaling Group to automatically maintain healthy instance counts across AZs.
 
-`![Auto Scaling Group](screenshots/06-asg.png)`
+`![Auto Scaling Group](screenshots/06-launch-template.png)`
+`![Auto Scaling Group](screenshots/07-asg.png)`
 
-### 6. Application Load Balancer
+
+### 7. Application Load Balancer
 Deployed an ALB across public subnets with health checks targeting the private EC2 instances.
 
 `![Application Load Balancer](screenshots/07-alb.png)`
+`![Application Load Balancer](screenshots/070-target-group.png)`
 
-### 7. Domain, SSL & Route 53
-Requested an SSL certificate via ACM, created an HTTPS listener on the ALB, and connected the domain via Route 53.
 
-`![ACM Certificate](screenshots/08-acm-cert.png)`
-`![HTTPS Listener](screenshots/09-https-listener.png)`
+### 8. Domain, SSL & Route 53
+Requested an SSL certificate via ACM, created an both HTTPS and HTTP listener on the ALB, and connected the Porkbundomain via Route 53.
+
+`![Certificate Manager](screenshots/090-ACM.png)`
 `![Route 53 Record Set](screenshots/10-route53-record.png)`
+`![Porkbun Domain](screenshots/11-nameserver.png)`
 
-### 8. Live Website
-Final result — the site loading securely over HTTPS on the custom domain.
+### 9. Live Website
+Final result  the site loading securely over HTTPS on the custom domain
+Screenshot of the front page: This is a screenshot of the application’s front page. The web application files have been provided in this repository, but the live version is not currently available because the AWS resources were deleted to avoid additional charges
 
-`![Live Website](screenshots/11-live-site.png)`
+`![Live Website With SSL Cert](screenshots/110-site-secured.png)`
+
+`![Live Website Without SSL Cert](screenshots/12-site-notsecured.png)`
 
 ---
 
@@ -202,14 +217,12 @@ Being upfront about the current limitations  and how I'd evolve this if it were 
 
 ---
 
-## About Me
 
-_Add a short bio, LinkedIn, and portfolio/GitHub links here._
 
-**[Your Name]**
-[LinkedIn](#) • [Portfolio](#) • [Email](#)
+**[Desmond Ojei]**
+  [LinkedIn](https://www.linkedin.com/in/desmond-ojei/) 
 
  
 ---
  
-*This project was built as a hands-on exercise in designing AWS infrastructure the way a real business would need it — prioritizing availability, security, and scalability over a minimal "it works" setup.*
+*This project was built as a hands-on exercise in designing AWS infrastructure the way a real business would need it, prioritizing availability, security, and scalability over a minimal "it works" setup.*
