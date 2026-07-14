@@ -162,11 +162,10 @@ Requested an SSL certificate via ACM, created an both HTTPS and HTTP listener on
 
 ### 9. Live Website
 Final result  the site loading securely over HTTPS on the custom domain
-Screenshot of the front page: This is a screenshot of the application’s front page. The web application files have been provided in this repository, but the live version is not currently available because the AWS resources were deleted to avoid additional charges
-
-![Live Website With SSL Cert](screenshots/110-site-secured.png)
+Screenshot of the front page: This is a screenshot of the application’s front page. The web application files have been provided in this repository, but the live version is not currently available because the AWS resources were deleted to avoid additional charges.
 
 ![Live Website Without SSL Cert](screenshots/12-site-notsecured.png)
+![Live Website With SSL Cert](screenshots/110-site-secured.png)
 
 ---
 
